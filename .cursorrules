@@ -1,0 +1,117 @@
+# LeadForge — Cursor Rules
+
+## Proyecto
+LeadForge es un sistema de captación, enriquecimiento y cualificación automática de leads comerciales. Recibe leads de múltiples fuentes, los enriquece con datos públicos, los puntúa con reglas e IA, y los asigna al vendedor adecuado.
+
+## Stack Tecnológico
+- **Lenguaje:** Python 3.12
+- **Framework:** FastAPI (async)
+- **ORM:** SQLAlchemy 2.0 (async, mapped_column style)
+- **Migraciones:** Alembic
+- **Validación:** Pydantic v2
+- **Cola de tareas:** Celery con Redis como broker
+- **Base de datos:** PostgreSQL 16
+- **Caché:** Redis 7
+- **Automatización:** n8n (workflows externos)
+- **Contenedores:** Docker + Docker Compose
+- **Tests:** Pytest + pytest-asyncio + httpx (AsyncClient)
+- **Linter/Formatter:** Ruff
+- **Type checking:** mypy
+
+## Convenciones de Código
+
+### General
+- Tipado estricto en TODAS las funciones (parámetros y retorno)
+- Docstrings en español, código en inglés
+- Nombres descriptivos, no abreviados
+- Máximo 88 caracteres por línea
+- Imports ordenados: stdlib → third-party → local
+
+### FastAPI
+- Routers en `app/api/v1/` organizados por dominio (leads, users, analytics)
+- Schemas Pydantic en `app/schemas/` separados: `lead.py`, `user.py`
+- Dependency injection para DB sessions, auth, y servicios
+- Siempre usar `status_code` explícito en los decoradores de ruta
+- Manejo de errores con `HTTPException` y exception handlers globales
+- Respuestas siempre tipadas con `response_model`
+
+### SQLAlchemy
+- Modelos en `app/models/` con `mapped_column` (estilo SQLAlchemy 2.0)
+- Usar `async` sessions siempre
+- Relaciones explícitas con `relationship()` y `back_populates`
+- Soft delete con campo `deleted_at` (nunca hard delete)
+- Timestamps `created_at` y `updated_at` en todos los modelos (usar mixin)
+
+### Celery
+- Tasks en `app/tasks/` organizadas por dominio
+- Siempre definir `max_retries`, `default_retry_delay` y `acks_late=True`
+- Tasks idempotentes: ejecutar 2 veces produce el mismo resultado
+- Logging estructurado dentro de cada task
+- Usar `bind=True` para acceder a `self` (retry, request info)
+
+### Tests
+- Cada módulo tiene su archivo de test correspondiente
+- Usar fixtures para DB session, client HTTP, y datos de prueba
+- Mocks para APIs externas (nunca llamar APIs reales en tests)
+- Naming: `test_<acción>_<escenario>_<resultado_esperado>`
+- Mínimo: tests para happy path + edge cases + error cases
+
+### Docker
+- Dockerfile multi-stage (builder + runtime)
+- Non-root user en producción
+- .dockerignore actualizado
+- Health checks en docker-compose para cada servicio
+
+## Estructura del Proyecto
+```
+leadforge/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI app factory
+│   ├── config.py            # Settings (Pydantic BaseSettings)
+│   ├── database.py          # Engine, session, base
+│   ├── api/
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── router.py    # Router principal v1
+│   │       ├── leads.py     # Endpoints de leads
+│   │       └── health.py    # Health check
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── base.py          # Base model con mixins
+│   │   └── lead.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   └── lead.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── lead_service.py
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   └── celery_app.py
+│   └── utils/
+│       └── __init__.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   └── api/
+│       └── test_leads.py
+├── alembic/
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── n8n/
+├── .cursorrules
+├── .env.example
+├── pyproject.toml
+├── Makefile
+└── README.md
+```
+
+## Cuando generes código
+1. Siempre incluye type hints completos
+2. Siempre incluye manejo de errores
+3. Explica brevemente qué hace cada función con un docstring
+4. Si generas un endpoint, genera también su test
+5. Usa async/await siempre que sea posible
+6. No uses `print()`, usa `logging` o `structlog`

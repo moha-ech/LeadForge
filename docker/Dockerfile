@@ -15,7 +15,7 @@ RUN apt-get update && \
 # Copiar dependencias e instalar
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir ".[dev]"
 
 # Copiar código
 COPY . .

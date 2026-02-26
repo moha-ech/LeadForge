@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.api.dependencies import require_api_key
 from app.models.lead import LeadSource, LeadStatus
 from app.schemas.lead import (
     LeadCreate,
@@ -42,6 +43,7 @@ async def get_lead_service(
     response_model=LeadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un lead nuevo",
+    dependencies=[Depends(require_api_key)],
 )
 async def create_lead(
     data: LeadCreate,
@@ -116,6 +118,7 @@ async def get_lead(
     "/{lead_id}",
     response_model=LeadResponse,
     summary="Actualizar un lead",
+    dependencies=[Depends(require_api_key)],
 )
 async def update_lead(
     lead_id: int,
@@ -136,6 +139,7 @@ async def update_lead(
     "/{lead_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar un lead (soft delete)",
+    dependencies=[Depends(require_api_key)],
 )
 async def delete_lead(
     lead_id: int,

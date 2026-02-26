@@ -7,6 +7,7 @@ y validarlas automáticamente al arrancar la aplicación.
 
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 class Settings(BaseSettings):
     """Configuración de la aplicación cargada desde variables de entorno."""
@@ -23,14 +24,15 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # --- API ---
-    API_V1_PREFIX: str = "/api/v1"
+    API_V1_PREFIX: str = os.getenv("API_V1_PREFIX")
+    API_KEYS: list[str] = os.getenv("API_KEYS")
 
     # --- Database ---
-    POSTGRES_USER: str = "leadforge"
-    POSTGRES_PASSWORD: str = "leadforge_secret"
-    POSTGRES_HOST: str = "postgres"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "leadforge"
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")
+    POSTGRES_PORT: int = os.getenv("POSTGRES_PORT")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB")
 
     @property
     def database_url(self) -> str:
@@ -41,9 +43,9 @@ class Settings(BaseSettings):
         )
 
     # --- Redis ---
-    REDIS_HOST: str = "redis"
-    REDIS_PORT: int = 6379
-    REDIS_DB: int = 0
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = os.getenv("REDIS_PORT")
+    REDIS_DB: int = os.getenv("REDIS_DB")
 
     @property
     def redis_url(self) -> str:
@@ -51,8 +53,8 @@ class Settings(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # --- Celery ---
-    CELERY_BROKER_URL: str = ""
-    CELERY_RESULT_BACKEND: str = ""
+    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL")
+    CELERY_RESULT_BACKEND: str = os.getenv("CELERY_RESULT_BACKEND")
 
     def model_post_init(self, __context: object) -> None:
         """Asigna valores por defecto que dependen de otros campos."""

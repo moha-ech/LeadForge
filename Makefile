@@ -63,6 +63,14 @@ redis-shell:
 test:
 	$(DC) exec api pytest -v
 
+## Ejecutar tests con coverage
+test-cov:
+	$(DC) exec api pytest -v --cov=app --cov-report=term-missing
+
+## Ejecutar un test específico (uso: make test-one T=tests/api/test_leads.py::TestCreateLead)
+test-one:
+	$(DC) exec api pytest -v $(T)
+
 ## Ejecutar linter (ruff)
 lint:
 	$(DC) exec api ruff check app/

@@ -108,6 +108,7 @@ class LeadResponse(BaseModel):
     status: LeadStatus
     score: int | None
     score_breakdown: dict | None
+    enrichment_data: dict | None = None
     notes: str | None
     first_contacted_at: datetime | None
     converted_at: datetime | None

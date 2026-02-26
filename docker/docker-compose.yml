@@ -18,6 +18,8 @@ services:
       - ..:/app              # Monta tu código local → hot-reload funciona
     env_file:
       - ../.env
+    environment:
+      - PYTHONPATH=/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +63,44 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # --- Celery Worker ---
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: leadforge-worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Flower (Monitor de Celery) ---
+  flower:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: leadforge-flower
+    command: celery -A app.tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      redis:
+        condition: service_healthy
 
   # --- n8n (Automatizaciones) ---
   n8n:

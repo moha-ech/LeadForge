@@ -1,5 +1,4 @@
-"""
-Servicio de leads: toda la lógica de negocio.
+"""Servicio de leads: toda la lógica de negocio.
 
 Los endpoints llaman a este servicio, nunca tocan la BD directamente.
 Así la lógica es reutilizable desde Celery, tests, o cualquier otro sitio.
@@ -20,6 +19,7 @@ from app.models.lead import (
     LeadStatus,
 )
 from app.schemas.lead import LeadCreate, LeadUpdate
+from app.tasks.lead_tasks import process_new_lead
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,7 @@ class LeadService:
     # ------------------------------------------
 
     async def create_lead(self, data: LeadCreate) -> Lead:
-        """
-        Crea un lead nuevo con su empresa asociada.
+        """Crea un lead nuevo con su empresa asociada.
 
         1. Comprueba si el email ya existe (duplicado)
         2. Busca o crea la empresa por dominio del email
@@ -76,8 +75,12 @@ class LeadService:
         self.db.add(event)
         await self.db.flush()
 
-        # Cargar la empresa asociada al lead
+        # Recargar el lead con la relación company cargada
+        # Sin esto, Pydantic no puede acceder a lead.company en async
         await self.db.refresh(lead, ["company"])
+
+        # Lanzar pipeline de procesamiento en background
+        process_new_lead.delay(lead.id)
 
         logger.info(
             "Lead creado: %s (%s) - empresa: %s",
@@ -110,8 +113,7 @@ class LeadService:
         source: str | None = None,
         search: str | None = None,
     ) -> tuple[list[Lead], int]:
-        """
-        Lista leads con filtros y paginación.
+        """Lista leads con filtros y paginación.
 
         Devuelve (leads, total) para construir la respuesta paginada.
         """
@@ -232,8 +234,7 @@ class LeadService:
     async def _get_or_create_company(
         self, domain: str, name: str | None = None
     ) -> Company | None:
-        """
-        Busca una empresa por dominio o la crea si no existe.
+        """Busca una empresa por dominio o la crea si no existe.
 
         Dominios genéricos (gmail, hotmail...) no crean empresa.
         """
